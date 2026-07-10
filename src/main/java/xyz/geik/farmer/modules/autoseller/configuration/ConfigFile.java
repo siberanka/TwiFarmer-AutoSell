@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import xyz.geik.glib.shades.okaeri.configs.OkaeriConfig;
 import xyz.geik.glib.shades.okaeri.configs.annotation.Comment;
+import xyz.geik.glib.shades.okaeri.configs.annotation.CustomKey;
 import xyz.geik.glib.shades.okaeri.configs.annotation.NameStrategy;
 import xyz.geik.glib.shades.okaeri.configs.annotation.Names;
 
@@ -42,5 +43,42 @@ public class ConfigFile extends OkaeriConfig {
             "the items must be same as the ones in the items.yml of the Farmer",
             "you can also remove this section for enable it to all items"})
     private List<String> items = new ArrayList<>();
+
+    @CustomKey("optimize-module")
+    @Comment({"Production optimization settings.",
+            "Every setting in this section is ignored while enable is false.",
+            "Paper region/entity schedulers are used for all delayed server access."})
+    private OptimizeModule optimizeModule = new OptimizeModule();
+
+    @Getter
+    @Setter
+    @Names(strategy = NameStrategy.IDENTITY)
+    public static class OptimizeModule extends OkaeriConfig {
+
+        @Comment("Master switch. Disabled by default to preserve legacy behavior.")
+        private boolean enable = false;
+
+        @Comment({"Delay before a queued sale batch is processed.",
+                "Higher values merge more capacity events into fewer economy calls."})
+        private int processingDelayTicks = 2;
+
+        @Comment("Maximum number of pending farmer/material batches before fail-closed fallback.")
+        private int maxPendingBatches = 4096;
+
+        @Comment("Maximum amount accepted into one batch; protects against malformed upstream values.")
+        private long maxBatchAmount = 1000000000L;
+
+        @Comment("How long region owner lookups are cached.")
+        private int ownerCacheSeconds = 60;
+
+        @Comment("Minimum interval between module GUI toggles from the same player.")
+        private int guiClickCooldownMillis = 250;
+
+        @Comment("Interval for async cleanup of expired cache and rate-limit entries.")
+        private int cleanupIntervalSeconds = 60;
+
+        @Comment("Write rejected or malformed operations to the server audit log.")
+        private boolean auditRejectedOperations = true;
+    }
 
 }
