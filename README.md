@@ -16,7 +16,7 @@ Plain Bukkit and Spigot servers are intentionally unsupported. The module fails 
 ## Installation
 
 1. Install a compatible Farmer v6 build on Paper, Folia, or Leaf.
-2. Place `Farmer-AutoSeller-2.0.0.jar` in `plugins/Farmer/modules/`.
+2. Place `Farmer-AutoSeller-2.0.1.jar` in `plugins/Farmer/modules/`.
 3. Restart the server.
 4. Edit `plugins/Farmer/modules/autoseller/config.yml` and set `status: true`.
 
@@ -29,6 +29,12 @@ status: false
 defaultStatus: false
 customPerm: farmer.autoseller
 items: []
+
+update-checker:
+  enable: true
+  check-interval-hours: 6
+  connect-timeout-seconds: 5
+  request-timeout-seconds: 8
 
 optimize-module:
   enable: false
@@ -45,6 +51,9 @@ optimize-module:
 - `defaultStatus` enables AutoSeller by default for every farmer.
 - `customPerm` controls access when default status is disabled.
 - `items` is a Farmer item-name allowlist; an empty list allows every configured Farmer item.
+- `update-checker.enable` defaults to `true`. Checks use asynchronous HTTPS against only the fixed `siberanka/TwiFarmer-AutoSell` GitHub repository.
+- Update messages contain the AutoSeller module name, installed/latest versions, and a validated release download link. They are sent once per release to the console and to operators or players with `farmer.admin`.
+- The interval and connection/request timeouts are bounded and repaired automatically. Reload/disable cancels or invalidates pending checks.
 - `optimize-module.enable` is the master switch for all optimization sub-settings. Every setting below it is inert while it is `false`.
 - `processingDelayTicks` batches capacity events on the owning Paper region, reducing economy calls under high load.
 - `maxPendingBatches` and `maxBatchAmount` bound memory and malformed-input exposure. When a bound is reached, the module falls back to the immediate safe path.
@@ -67,7 +76,7 @@ Valid custom values and unknown extension keys are preserved.
 mvn clean verify
 ```
 
-The release JAR is written to `target/Farmer-AutoSeller-2.0.0.jar`.
+The release JAR is written to `target/Farmer-AutoSeller-2.0.1.jar`.
 
 ## Security and operational notes
 

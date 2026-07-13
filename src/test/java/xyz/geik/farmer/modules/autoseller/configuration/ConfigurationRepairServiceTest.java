@@ -32,6 +32,8 @@ class ConfigurationRepairServiceTest {
         assertFalse(repaired.getBoolean("status"));
         assertEquals("farmer.autoseller", repaired.getString("customPerm"));
         assertEquals(2, repaired.getInt("optimize-module.processingDelayTicks"));
+        assertTrue(repaired.getBoolean("update-checker.enable"));
+        assertEquals(6, repaired.getInt("update-checker.check-interval-hours"));
         assertTrue(hasBackup(config.toFile()));
         assertTrue(temporaryDirectory.resolve("lang/en.yml").toFile().isFile());
         assertTrue(temporaryDirectory.resolve("lang/tr.yml").toFile().isFile());
@@ -52,6 +54,8 @@ class ConfigurationRepairServiceTest {
         assertEquals("&aAktif", repaired.getString("enabled"));
         assertEquals("&cDevre dışı", repaired.getString("disabled"));
         assertEquals("s", repaired.getString("moduleGui.icon.guiInterface"));
+        assertTrue(repaired.getString("update.available").contains("{module}"));
+        assertTrue(repaired.getString("update.available").contains("{url}"));
         assertTrue(repaired.getStringList("moduleGui.icon.lore").stream().anyMatch(line -> line.contains("{status}")));
         assertTrue(hasBackup(turkish.toFile()));
     }

@@ -59,6 +59,10 @@ public final class ConfigurationRepairService {
         invalid |= repair(yaml, "defaultStatus", false, value -> value instanceof Boolean);
         invalid |= repair(yaml, "customPerm", "farmer.autoseller", value -> validPermission(value));
         invalid |= repair(yaml, "items", List.of(), ConfigurationRepairService::validItemList);
+        invalid |= repair(yaml, "update-checker.enable", true, value -> value instanceof Boolean);
+        invalid |= repairNumber(yaml, "update-checker.check-interval-hours", 6, 1, 168);
+        invalid |= repairNumber(yaml, "update-checker.connect-timeout-seconds", 5, 2, 30);
+        invalid |= repairNumber(yaml, "update-checker.request-timeout-seconds", 8, 3, 60);
         invalid |= repair(yaml, "optimize-module.enable", false, value -> value instanceof Boolean);
         invalid |= repairNumber(yaml, "optimize-module.processingDelayTicks", 2, 1, 1200);
         invalid |= repairNumber(yaml, "optimize-module.maxPendingBatches", 4096, 16, 100000);
@@ -94,6 +98,9 @@ public final class ConfigurationRepairService {
             }
             if ("moduleGui.icon.lore".equals(path)) {
                 valid &= validLore(actual);
+            }
+            if ("update.available".equals(path)) {
+                valid &= validUpdateMessage(actual);
             }
             if (!valid) {
                 yaml.set(path, expected);
@@ -228,6 +235,18 @@ public final class ConfigurationRepairService {
             hasStatus |= ((String) line).contains("{status}");
         }
         return hasStatus;
+    }
+
+    private static boolean validUpdateMessage(Object value) {
+        if (!(value instanceof String) || ((String) value).length() > 1024) {
+            return false;
+        }
+        String message = (String) value;
+        return !message.trim().isEmpty()
+                && message.contains("{module}")
+                && message.contains("{current}")
+                && message.contains("{latest}")
+                && message.contains("{url}");
     }
 
     private static boolean containsBrokenEncoding(Object value) {

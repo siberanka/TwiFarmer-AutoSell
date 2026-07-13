@@ -44,6 +44,10 @@ public class ConfigFile extends OkaeriConfig {
             "you can also remove this section for enable it to all items"})
     private List<String> items = new ArrayList<>();
 
+    @CustomKey("update-checker")
+    @Comment("Asynchronously checks the fixed AutoSeller GitHub repository for stable releases.")
+    private UpdateCheckerSettings updateChecker = new UpdateCheckerSettings();
+
     @CustomKey("optimize-module")
     @Comment({"Production optimization settings.",
             "Every setting in this section is ignored while enable is false.",
@@ -79,6 +83,23 @@ public class ConfigFile extends OkaeriConfig {
 
         @Comment("Write rejected or malformed operations to the server audit log.")
         private boolean auditRejectedOperations = true;
+    }
+
+    @Getter
+    @Setter
+    @Names(strategy = NameStrategy.IDENTITY)
+    public static class UpdateCheckerSettings extends OkaeriConfig {
+
+        private boolean enable = true;
+
+        @CustomKey("check-interval-hours")
+        private int checkIntervalHours = 6;
+
+        @CustomKey("connect-timeout-seconds")
+        private int connectTimeoutSeconds = 5;
+
+        @CustomKey("request-timeout-seconds")
+        private int requestTimeoutSeconds = 8;
     }
 
 }

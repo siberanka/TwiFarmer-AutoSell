@@ -8,8 +8,10 @@ import xyz.geik.farmer.Main;
 import xyz.geik.farmer.modules.FarmerModule;
 import xyz.geik.farmer.modules.autoseller.configuration.ConfigFile;
 import xyz.geik.farmer.modules.autoseller.configuration.ConfigurationRepairService;
+import xyz.geik.farmer.modules.autoseller.configuration.UpdateSettings;
 import xyz.geik.farmer.modules.autoseller.handlers.AutoSellerEvent;
 import xyz.geik.farmer.modules.autoseller.handlers.AutoSellerGuiCreateEvent;
+import xyz.geik.farmer.modules.autoseller.update.UpdateChecker;
 import xyz.geik.glib.GLib;
 import xyz.geik.glib.chat.ChatUtils;
 import xyz.geik.glib.shades.okaeri.configs.ConfigManager;
@@ -20,6 +22,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * AutoSeller module main class
@@ -48,6 +51,10 @@ public class AutoSeller extends FarmerModule {
 
     private ScheduledTask cleanupTask;
 
+    private UpdateChecker updateChecker;
+
+    private final AtomicLong lifecycleEpoch = new AtomicLong();
+
     private volatile boolean operational;
 
     /**
@@ -55,6 +62,7 @@ public class AutoSeller extends FarmerModule {
      */
     @Override
     public void onEnable() {
+        lifecycleEpoch.incrementAndGet();
         instance = this;
         operational = false;
         this.setHasGui(false);
@@ -68,6 +76,7 @@ public class AutoSeller extends FarmerModule {
         new ConfigurationRepairService(Main.getInstance(), moduleDirectory).repairAll();
         this.setLang(Main.getConfigFile().getSettings().getLang(), this.getClass());
         setupFile();
+        startUpdateChecker();
 
         if (configFile.isStatus()) {
             operational = true;
@@ -102,7 +111,9 @@ public class AutoSeller extends FarmerModule {
     @Override
     public void onDisable() {
         operational = false;
+        lifecycleEpoch.incrementAndGet();
         this.setHasGui(false);
+        stopUpdateChecker();
         stopMaintenance();
         if (autoSellerEvent != null) {
             autoSellerEvent.shutdown();
@@ -115,6 +126,10 @@ public class AutoSeller extends FarmerModule {
             autoSellerGuiCreateEvent = null;
         }
         allowedItems = Collections.emptySet();
+    }
+
+    public long getLifecycleGeneration() {
+        return lifecycleEpoch.get();
     }
 
     public void setupFile() {
@@ -160,6 +175,19 @@ public class AutoSeller extends FarmerModule {
         if (cleanupTask != null) {
             cleanupTask.cancel();
             cleanupTask = null;
+        }
+    }
+
+    private void startUpdateChecker() {
+        stopUpdateChecker();
+        updateChecker = new UpdateChecker(this, UpdateSettings.from(configFile.getUpdateChecker()));
+        updateChecker.start();
+    }
+
+    private void stopUpdateChecker() {
+        if (updateChecker != null) {
+            updateChecker.stop();
+            updateChecker = null;
         }
     }
 
