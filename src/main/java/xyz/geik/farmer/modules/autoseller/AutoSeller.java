@@ -11,6 +11,7 @@ import xyz.geik.farmer.modules.autoseller.configuration.ConfigurationRepairServi
 import xyz.geik.farmer.modules.autoseller.configuration.UpdateSettings;
 import xyz.geik.farmer.modules.autoseller.handlers.AutoSellerEvent;
 import xyz.geik.farmer.modules.autoseller.handlers.AutoSellerGuiCreateEvent;
+import xyz.geik.farmer.modules.autoseller.platform.PaperPlatform;
 import xyz.geik.farmer.modules.autoseller.update.UpdateChecker;
 import xyz.geik.glib.GLib;
 import xyz.geik.glib.chat.ChatUtils;
@@ -66,7 +67,7 @@ public class AutoSeller extends FarmerModule {
         instance = this;
         operational = false;
         this.setHasGui(false);
-        if (!isPaperRuntime()) {
+        if (!PaperPlatform.isSupported()) {
             operational = false;
             ChatUtils.sendMessage(Bukkit.getConsoleSender(), "&3[AutoSeller] &cPaper is required; plain Bukkit/Spigot is unsupported.");
             return;
@@ -195,12 +196,4 @@ public class AutoSeller extends FarmerModule {
         return new File(Main.getInstance().getDataFolder(), "modules/" + getName().toLowerCase(java.util.Locale.ROOT));
     }
 
-    private static boolean isPaperRuntime() {
-        try {
-            Class.forName("io.papermc.paper.threadedregions.scheduler.RegionScheduler", false, AutoSeller.class.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException ignored) {
-            return false;
-        }
-    }
 }

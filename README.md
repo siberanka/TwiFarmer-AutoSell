@@ -8,15 +8,15 @@ Maintained by Geik and siberanka.
 
 - Minecraft/Paper `1.21.x` through `26.x`
 - Folia and Leaf, using Paper's region and async schedulers
-- Java 21 bytecode (26.x servers may require a newer Java runtime as specified by Paper)
-- Farmer v6 `v6-b120` or newer compatible builds
+- Java 21 bytecode; Paper 26.x server runtime requires Java 25
+- Farmer v6 `v6-b123` or newer compatible builds
 
 Plain Bukkit and Spigot servers are intentionally unsupported. The module fails closed and registers no listeners if the Paper runtime API is unavailable.
 
 ## Installation
 
-1. Install a compatible Farmer v6 build on Paper, Folia, or Leaf.
-2. Place `Farmer-AutoSeller-2.0.2.jar` in `plugins/Farmer/modules/`.
+1. Install Farmer v6-b123 or newer on Paper, Folia, or Leaf.
+2. Place `Farmer-AutoSeller-2.0.3.jar` in `plugins/Farmer/modules/`.
 3. Restart the server.
 4. Edit `plugins/Farmer/modules/autoseller/config.yml` and set `status: true`.
 
@@ -73,10 +73,11 @@ Valid custom values and unknown extension keys are preserved.
 ## Building
 
 ```bash
-mvn clean verify
+mvn -Ppaper-1.21 clean verify
+mvn -Ppaper-26 clean verify
 ```
 
-The release JAR is written to `target/Farmer-AutoSeller-2.0.2.jar`.
+The release JAR is written to `target/Farmer-AutoSeller-2.0.3.jar`.
 
 ## Security and operational notes
 
