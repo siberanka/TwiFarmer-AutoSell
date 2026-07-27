@@ -16,7 +16,7 @@ Plain Bukkit and Spigot servers are intentionally unsupported. The module fails 
 ## Installation
 
 1. Install Farmer v6-b123 or newer on Paper, Folia, or Leaf.
-2. Place `Farmer-AutoSeller-2.0.3.jar` in `plugins/Farmer/modules/`.
+2. Place `Farmer-AutoSeller-2.0.4.jar` in `plugins/Farmer/modules/`.
 3. Restart the server.
 4. Edit `plugins/Farmer/modules/autoseller/config.yml` and set `status: true`.
 
@@ -77,7 +77,7 @@ mvn -Ppaper-1.21 clean verify
 mvn -Ppaper-26 clean verify
 ```
 
-The release JAR is written to `target/Farmer-AutoSeller-2.0.3.jar`.
+The release JAR is written to `target/Farmer-AutoSeller-2.0.4.jar`.
 
 ## Security and operational notes
 
