@@ -52,12 +52,12 @@ public final class AutoSellerEvent implements Listener {
             material = XMaterial.matchXMaterial(event.getItem());
             farmerItem = farmer.getInv().getStockedItem(material);
             owner = resolveOwner(farmer, event.getItemSpawnEvent().getLocation());
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException | LinkageError exception) {
             audit("Rejected unresolved farmer/item state: " + exception.getClass().getSimpleName());
             return;
         }
 
-        if (farmerItem == null || owner == null || !Double.isFinite(farmerItem.getPrice()) || farmerItem.getPrice() <= 0
+        if (farmerItem == null || owner == null
                 || !isAllowed(module, farmerItem) || !hasPermission(module, farmer, owner)) {
             return;
         }
@@ -81,9 +81,11 @@ public final class AutoSellerEvent implements Listener {
             return;
         }
         try {
-            if (!farmer.getAttributeStatus("autoseller") || item.getAmount() <= 0 || item.getPrice() <= 0) {
+            if (!farmer.getAttributeStatus("autoseller") || item.getAmount() <= 0) {
                 return;
             }
+            // Farmer core resolves market, dynamic, and items.yml fallback prices.
+            // AutoSeller must not veto a sale by inspecting the raw manual price.
             Bukkit.getPluginManager().callEvent(new FarmerItemSellEvent(farmer, item, owner));
             if (item.getAmount() != 0) {
                 audit("Sale result verification failed for farmer " + farmer.getId());
@@ -91,7 +93,7 @@ public final class AutoSellerEvent implements Listener {
             }
             Bukkit.getPluginManager().callEvent(new FarmerItemCollectEvent(
                     farmer, source.getItem(), source.getLeftAmount(), source.getItemSpawnEvent()));
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException | LinkageError exception) {
             audit("Sale failed closed for farmer " + farmer.getId() + ": " + exception.getClass().getSimpleName());
         } finally {
             lock.unlock();
@@ -127,7 +129,7 @@ public final class AutoSellerEvent implements Listener {
             Bukkit.getRegionScheduler().runDelayed(Main.getInstance(), created.location,
                     task -> drain(created), optimize.getProcessingDelayTicks());
             return true;
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException | LinkageError exception) {
             pendingSales.remove(key, created);
             audit("Could not schedule region-owned sale batch: " + exception.getClass().getSimpleName());
             return false;
@@ -143,16 +145,18 @@ public final class AutoSellerEvent implements Listener {
         lock.lock();
         try {
             FarmerItem item = pending.farmer.getInv().getStockedItem(pending.material);
-            if (amount <= 0 || !pending.farmer.getAttributeStatus("autoseller") || item.getPrice() <= 0) {
+            if (amount <= 0 || !pending.farmer.getAttributeStatus("autoseller")) {
                 audit("Pending batch failed validation for farmer " + pending.farmer.getId());
                 return;
             }
             pending.farmer.getInv().forceSumItem(pending.material, amount);
+            // Core leaves stock untouched when neither market nor manual pricing
+            // can produce a safe quote, including this already-owned batch.
             Bukkit.getPluginManager().callEvent(new FarmerItemSellEvent(pending.farmer, item, pending.owner));
             if (item.getAmount() != 0) {
                 audit("Batched sale result verification failed for farmer " + pending.farmer.getId());
             }
-        } catch (RuntimeException exception) {
+        } catch (RuntimeException | LinkageError exception) {
             audit("Batched sale failed for farmer " + pending.farmer.getId() + ": " + exception.getClass().getSimpleName());
         } finally {
             lock.unlock();
