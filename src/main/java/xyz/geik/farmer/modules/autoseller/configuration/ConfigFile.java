@@ -34,6 +34,11 @@ public class ConfigFile extends OkaeriConfig {
             "is higher than farmer level."})
     private boolean defaultStatus = false;
 
+    @CustomKey("required-farmer-level")
+    @Comment({"Minimum one-based Farmer level required to use Auto Sell.",
+            "Raise this value to unlock the module at a later Farmer upgrade."})
+    private int requiredFarmerLevel = 1;
+
     @Comment({"custom perm only used if defaultStatus is false",
             "only players with this perm will be able to use the auto-seller"})
     private String customPerm = "farmer.autoseller";

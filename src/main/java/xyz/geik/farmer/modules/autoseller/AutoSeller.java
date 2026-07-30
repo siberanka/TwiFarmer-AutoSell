@@ -151,6 +151,8 @@ public class AutoSeller extends FarmerModule {
         customPerm = configFile.getCustomPerm();
         defaultStatus = configFile.isDefaultStatus();
         setDefaultState(defaultStatus);
+        setRequiredFarmerLevel(configFile.getRequiredFarmerLevel());
+        setDisplayName(getLang().getString("module-name"));
     }
 
     private void startMaintenance() {

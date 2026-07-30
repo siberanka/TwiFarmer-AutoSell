@@ -9,8 +9,10 @@ import org.jetbrains.annotations.NotNull;
 import xyz.geik.farmer.api.handlers.FarmerModuleGuiCreateEvent;
 import xyz.geik.farmer.helpers.gui.GuiHelper;
 import xyz.geik.farmer.model.Farmer;
+import xyz.geik.farmer.model.FarmerLevel;
 import xyz.geik.farmer.modules.autoseller.AutoSeller;
 import xyz.geik.glib.chat.ChatUtils;
+import xyz.geik.glib.chat.Placeholder;
 import xyz.geik.glib.shades.inventorygui.DynamicGuiElement;
 import xyz.geik.glib.shades.inventorygui.StaticGuiElement;
 
@@ -56,10 +58,14 @@ public class AutoSellerGuiCreateEvent implements Listener {
                                 click -> {
                                     AutoSeller activeModule = AutoSeller.getInstance();
                                     if (activeModule == null || !activeModule.isOperational()) return true;
+                                    if (!allowClick(e.getPlayer().getUniqueId(), activeModule)) return true;
+                                    if (!activeModule.isAvailableFor(e.getFarmer())) {
+                                        sendLevelRequired(e.getFarmer(), e.getPlayer(), activeModule);
+                                        return true;
+                                    }
                                     // If player don't have permission do nothing
                                     if (!e.getPlayer().hasPermission(activeModule.getCustomPerm()))
                                         return true;
-                                    if (!allowClick(e.getPlayer().getUniqueId(), activeModule)) return true;
                                     ReentrantLock lock = FarmerOperationLocks.forFarmer(e.getFarmer().getId());
                                     if (!lock.tryLock()) return true;
                                     try {
@@ -81,17 +87,43 @@ public class AutoSellerGuiCreateEvent implements Listener {
      * @return item stack of module gui
      */
     private @NotNull ItemStack getGuiItem(@NotNull Farmer farmer) {
-        ItemStack item = GuiHelper.getItem("moduleGui.icon", AutoSeller.getInstance().getLang());
+        AutoSeller module = AutoSeller.getInstance();
+        ItemStack item = GuiHelper.getItem("moduleGui.icon", module.getLang());
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
-        String status = farmer.getAttributeStatus("autoseller") ?
-                AutoSeller.getInstance().getLang().getString("enabled") :
-                AutoSeller.getInstance().getLang().getString("disabled");
+        int currentLevel = FarmerLevel.getLevelNumber(farmer.getLevel());
+        boolean available = module.isAvailableFor(farmer);
+        String status = available
+                ? (farmer.getAttributeStatus("autoseller")
+                    ? module.getLang().getString("enabled")
+                    : module.getLang().getString("disabled"))
+                : module.getLang().getString("locked");
+        String action = available
+                ? module.getLang().getString("moduleGui.click-to-toggle")
+                : ChatUtils.replacePlaceholders(
+                        module.getLang().getString("moduleGui.upgrade-to-unlock"),
+                        new Placeholder("{required_level}", String.valueOf(module.getRequiredFarmerLevel())));
         List<String> lore = meta.getLore() == null ? Collections.emptyList() : meta.getLore();
-        meta.setLore(lore.stream().map(line -> ChatUtils.color(line.replace("{status}", status)))
+        meta.setLore(lore.stream().map(line -> ChatUtils.color(ChatUtils.replacePlaceholders(
+                        line,
+                        new Placeholder("{status}", status),
+                        new Placeholder("{required_level}", String.valueOf(module.getRequiredFarmerLevel())),
+                        new Placeholder("{current_level}", String.valueOf(currentLevel)),
+                        new Placeholder("{action}", action))))
                 .collect(Collectors.toList()));
         item.setItemMeta(meta);
         return item;
+    }
+
+    private void sendLevelRequired(
+            @NotNull Farmer farmer,
+            org.bukkit.entity.Player player,
+            @NotNull AutoSeller module
+    ) {
+        ChatUtils.sendMessage(player, ChatUtils.replacePlaceholders(
+                module.getLang().getString("level-required"),
+                new Placeholder("{required_level}", String.valueOf(module.getRequiredFarmerLevel())),
+                new Placeholder("{current_level}", String.valueOf(FarmerLevel.getLevelNumber(farmer.getLevel())))));
     }
 
     @EventHandler
@@ -100,9 +132,11 @@ public class AutoSellerGuiCreateEvent implements Listener {
     }
 
     private boolean allowClick(UUID playerId, AutoSeller module) {
-        if (!module.getConfigFile().getOptimizeModule().isEnable()) return true;
         long now = System.nanoTime();
-        long cooldown = module.getConfigFile().getOptimizeModule().getGuiClickCooldownMillis() * 1_000_000L;
+        long cooldownMillis = module.getConfigFile().getOptimizeModule().isEnable()
+                ? module.getConfigFile().getOptimizeModule().getGuiClickCooldownMillis()
+                : 250L;
+        long cooldown = cooldownMillis * 1_000_000L;
         Long previous = lastClick.put(playerId, now);
         return previous == null || now - previous >= cooldown;
     }

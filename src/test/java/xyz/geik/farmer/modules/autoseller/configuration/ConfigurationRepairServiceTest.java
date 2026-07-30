@@ -30,6 +30,7 @@ class ConfigurationRepairServiceTest {
 
         YamlConfiguration repaired = YamlConfiguration.loadConfiguration(config.toFile());
         assertFalse(repaired.getBoolean("status"));
+        assertEquals(1, repaired.getInt("required-farmer-level"));
         assertEquals("farmer.autoseller", repaired.getString("customPerm"));
         assertEquals(2, repaired.getInt("optimize-module.processingDelayTicks"));
         assertTrue(repaired.getBoolean("update-checker.enable"));
@@ -54,10 +55,34 @@ class ConfigurationRepairServiceTest {
         assertEquals("&aAktif", repaired.getString("enabled"));
         assertEquals("&cDevre dışı", repaired.getString("disabled"));
         assertEquals("s", repaired.getString("moduleGui.icon.guiInterface"));
+        assertEquals("Otomatik Satış", repaired.getString("module-name"));
+        assertTrue(repaired.getString("level-required").contains("{required_level}"));
+        assertTrue(repaired.getString("level-required").contains("{current_level}"));
         assertTrue(repaired.getString("update.available").contains("{module}"));
         assertTrue(repaired.getString("update.available").contains("{url}"));
         assertTrue(repaired.getStringList("moduleGui.icon.lore").stream().anyMatch(line -> line.contains("{status}")));
+        assertTrue(repaired.getStringList("moduleGui.icon.lore").stream()
+                .anyMatch(line -> line.contains("{required_level}")));
+        assertTrue(repaired.getStringList("moduleGui.icon.lore").stream().anyMatch(line -> line.contains("{action}")));
         assertTrue(hasBackup(turkish.toFile()));
+    }
+
+    @Test
+    void repairsInvalidRequiredFarmerLevelWithoutDiscardingCustomEntries() throws Exception {
+        Path config = temporaryDirectory.resolve("config.yml");
+        Files.writeString(config, """
+                status: true
+                required-farmer-level: 0
+                custom-entry: preserved
+                """, StandardCharsets.UTF_8);
+
+        new ConfigurationRepairService(pluginStub(), temporaryDirectory.toFile()).repairAll();
+
+        YamlConfiguration repaired = YamlConfiguration.loadConfiguration(config.toFile());
+        assertTrue(repaired.getBoolean("status"));
+        assertEquals(1, repaired.getInt("required-farmer-level"));
+        assertEquals("preserved", repaired.getString("custom-entry"));
+        assertTrue(hasBackup(config.toFile()));
     }
 
     private static boolean hasBackup(File original) {

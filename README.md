@@ -9,14 +9,14 @@ Maintained by Geik and siberanka.
 - Minecraft/Paper `1.21.x` through `26.x`
 - Folia and Leaf, using Paper's region and async schedulers
 - Java 21 bytecode; Paper 26.x server runtime requires Java 25
-- Farmer v6 `v6-b123` or newer compatible builds
+- Farmer v6 `v6-b125` or newer compatible builds
 
 Plain Bukkit and Spigot servers are intentionally unsupported. The module fails closed and registers no listeners if the Paper runtime API is unavailable.
 
 ## Installation
 
-1. Install Farmer v6-b123 or newer on Paper, Folia, or Leaf.
-2. Place `Farmer-AutoSeller-2.0.4.jar` in `plugins/Farmer/modules/`.
+1. Install Farmer v6-b125 or newer on Paper, Folia, or Leaf.
+2. Place `Farmer-AutoSeller-2.0.5.jar` in `plugins/Farmer/modules/`.
 3. Restart the server.
 4. Edit `plugins/Farmer/modules/autoseller/config.yml` and set `status: true`.
 
@@ -27,6 +27,7 @@ Use a full restart for module upgrades. Server/plugin hot reloads are not recomm
 ```yaml
 status: false
 defaultStatus: false
+required-farmer-level: 1
 customPerm: farmer.autoseller
 items: []
 
@@ -49,6 +50,7 @@ optimize-module:
 
 - `status` enables the AutoSeller module.
 - `defaultStatus` enables AutoSeller by default for every farmer.
+- `required-farmer-level` is the one-based Farmer level that unlocks Auto Sell and defaults to `1`.
 - `customPerm` controls access when default status is disabled.
 - `items` is a Farmer item-name allowlist; an empty list allows every configured Farmer item.
 - `update-checker.enable` defaults to `true`. Checks use asynchronous HTTPS against only the fixed `siberanka/TwiFarmer-AutoSell` GitHub repository.
@@ -70,6 +72,11 @@ On startup and module reload, AutoSeller checks `config.yml` and all bundled `en
 
 Valid custom values and unknown extension keys are preserved.
 
+Raising `required-farmer-level` takes effect immediately, including for queued
+sales. Locked Farmers retain their saved module preference without being able to
+toggle or run Auto Sell; the preference becomes effective again after the Farmer
+reaches the configured level or the requirement is lowered.
+
 ## Building
 
 ```bash
@@ -77,7 +84,7 @@ mvn -Ppaper-1.21 clean verify
 mvn -Ppaper-26 clean verify
 ```
 
-The release JAR is written to `target/Farmer-AutoSeller-2.0.4.jar`.
+The release JAR is written to `target/Farmer-AutoSeller-2.0.5.jar`.
 
 ## Security and operational notes
 

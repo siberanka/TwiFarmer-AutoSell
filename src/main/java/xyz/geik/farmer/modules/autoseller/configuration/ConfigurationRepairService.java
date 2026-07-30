@@ -57,6 +57,7 @@ public final class ConfigurationRepairService {
         boolean invalid = false;
         invalid |= repair(yaml, "status", false, value -> value instanceof Boolean);
         invalid |= repair(yaml, "defaultStatus", false, value -> value instanceof Boolean);
+        invalid |= repairNumber(yaml, "required-farmer-level", 1, 1, 1000);
         invalid |= repair(yaml, "customPerm", "farmer.autoseller", value -> validPermission(value));
         invalid |= repair(yaml, "items", List.of(), ConfigurationRepairService::validItemList);
         invalid |= repair(yaml, "update-checker.enable", true, value -> value instanceof Boolean);
@@ -98,6 +99,12 @@ public final class ConfigurationRepairService {
             }
             if ("moduleGui.icon.lore".equals(path)) {
                 valid &= validLore(actual);
+            }
+            if ("level-required".equals(path)) {
+                valid &= hasPlaceholders(actual, "{required_level}", "{current_level}");
+            }
+            if ("moduleGui.upgrade-to-unlock".equals(path)) {
+                valid &= hasPlaceholders(actual, "{required_level}");
             }
             if ("update.available".equals(path)) {
                 valid &= validUpdateMessage(actual);
@@ -228,13 +235,25 @@ public final class ConfigurationRepairService {
             return false;
         }
         boolean hasStatus = false;
+        boolean hasRequiredLevel = false;
+        boolean hasAction = false;
         for (Object line : (List<?>) value) {
             if (!(line instanceof String)) {
                 return false;
             }
             hasStatus |= ((String) line).contains("{status}");
+            hasRequiredLevel |= ((String) line).contains("{required_level}");
+            hasAction |= ((String) line).contains("{action}");
         }
-        return hasStatus;
+        return hasStatus && hasRequiredLevel && hasAction;
+    }
+
+    private static boolean hasPlaceholders(Object value, String... placeholders) {
+        if (!(value instanceof String)) {
+            return false;
+        }
+        String text = (String) value;
+        return Arrays.stream(placeholders).allMatch(text::contains);
     }
 
     private static boolean validUpdateMessage(Object value) {
